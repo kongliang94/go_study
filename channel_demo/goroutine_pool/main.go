@@ -27,15 +27,15 @@ func (t *Task) Execute() {
 /* 有关协程池的定义及操作 */
 //定义池类型
 type Pool struct {
-	//对外接收Task的入口
+	// EntryChannel 对外接收Task的入口
 	EntryChannel chan *Task
-	//协程池最大worker数量,限定Goroutine的个数
+	// worker_num 协程池最大worker数量,限定Goroutine的个数
 	worker_num int
-	//协程池内部的任务就绪队列列
+	// JobsChannel 协程池内部的任务就绪队列列
 	JobsChannel chan *Task
 }
 
-//创建一一个协程池
+// NewPool 创建一个协程池
 func NewPool(cap int) *Pool {
 	pool := Pool{
 		EntryChannel: make(chan *Task),
@@ -45,7 +45,7 @@ func NewPool(cap int) *Pool {
 	return &pool
 }
 
-//协程池创建一一个worker并且开始工工作
+//协程池创建一个worker并且开始工工作
 func (p *Pool) worker(work_ID int) {
 	//worker不不断的从JobsChannel内部任务队列列中拿任务
 	for task := range p.JobsChannel {
@@ -77,18 +77,27 @@ func main() {
 
 	//创建一一个Task
 	t := NewTask(func() error {
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
+		fmt.Println(time.Now())
+		return nil
+	})
+
+	t1 := NewTask(func() error {
+		time.Sleep(2 * time.Second)
 		fmt.Println(time.Now())
 		return nil
 	})
 	//创建一个协程池,最大大开启3个协程worker
-	p := NewPool(4)
+	p := NewPool(5)
 	//开一个协程 不不断的向 Pool 输送打印一条时间的task任务
 	go func() {
 		for {
+			time.Sleep(5 * time.Second)
 			p.EntryChannel <- t
+			p.EntryChannel <- t1
 		}
 	}()
 	//启动协程池p
 	p.Run()
+
 }
